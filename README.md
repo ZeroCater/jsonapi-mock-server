@@ -97,9 +97,23 @@ When set to `0`, or `false`, mock server won't return resources with faked/gener
 
 ## Working on mock server
 
-#### Installation
+### Requirements
 
-`pip install jsonapi-mock-server`
+1. Django
+2. Django REST Framework
+
+### Installation
+
+#### From PyPI
+
+`$ pip install jsonapi-mock-server`
+
+#### From source
+
+```
+$ git clone https://github.com/ZeroCater/mp-mock-server.git
+$ cd jsonapi-mock-server && pip install -e .
+```
 
 #### To add a new resource
 
@@ -130,3 +144,11 @@ To add a new resource:
 ##### Add relevant tests
 9. `cp tests/template.py tests/tests_<underscored_singularized_resource_name>.py`
 10. Open this file with your favorite editor. Rename all instances of `"Resource"` or `"resource"` with your resource name.
+
+### Contribution
+
+Issues and Pull Requests are welcome.
+
+### License
+
+Linty is Copyright © 2016 ZeroCater. It is free software, and may be redistributed under the terms specified in the [LICENSE](LICENSE) file.
