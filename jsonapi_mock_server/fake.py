@@ -13,6 +13,13 @@ class BaseFaker(object):
         raise NotImplementedError
 
 
+class NullableBaseFaker(BaseFaker):
+    def generate_value(self):
+        if random.choice([True, False]):
+            return None
+        return super(NullableBaseFaker, self).generate_value()
+
+
 class IntFaker(BaseFaker):
     def __init__(self, start, end):
         super(IntFaker, self).__init__()
@@ -50,3 +57,7 @@ class StringFaker(BaseFaker):
 
     def generate_value(self):
         return getattr(self.fake, self.faker_provider)()
+
+
+class NullableIntFaker(NullableBaseFaker, IntFaker):
+    pass
