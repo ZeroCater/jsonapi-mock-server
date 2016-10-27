@@ -61,3 +61,7 @@ class StringFaker(BaseFaker):
 
 class NullableIntFaker(NullableBaseFaker, IntFaker):
     pass
+
+
+class NullableBooleanFaker(NullableBaseFaker, BooleanFaker):
+    pass
