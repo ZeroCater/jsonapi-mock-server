@@ -97,6 +97,8 @@ When set to `0`, or `false`, mock server won't return resources with faked/gener
 
 ## Working on mock server
 
+You can view a sample app [here on Github](https://github.com/ZeroCater/jsonapi-mock-server-sample-project).
+
 ### Requirements
 
 1. Django
