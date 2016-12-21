@@ -7,7 +7,7 @@ from rest_framework import viewsets
 
 from hooks import MockServerHookParser
 from json_api_builder import JsonAPIErrorBuilder, JsonAPIResourceDetailBuilder, JsonAPIResourceListBuilder
-from mock_server import settings
+from jsonapi_mock_server import settings
 
 
 class MockServerBaseViewSet(viewsets.ViewSet):
@@ -31,6 +31,8 @@ class MockServerBaseViewSet(viewsets.ViewSet):
 
 
 class ResourceDetailViewSet(MockServerBaseViewSet):
+    allowed_methods = ['GET', 'PATCH', 'DELETE', 'OPTIONS']
+
     def retrieve(self, request, pk):
         resource_id = pk
         overrides = MockServerHookParser(request, self.attributes).parse_hooks()
@@ -84,6 +86,8 @@ class ResourceDetailViewSet(MockServerBaseViewSet):
 
 
 class ResourceListViewSet(MockServerBaseViewSet):
+    allowed_methods = ['GET', 'POST', 'OPTIONS']
+
     def list(self, request):
         overrides = MockServerHookParser(request, self.attributes).parse_hooks()
 
@@ -186,4 +190,4 @@ class ResourceListViewSet(MockServerBaseViewSet):
 
 
 class ResourceViewSet(ResourceListViewSet, ResourceDetailViewSet):
-    pass
+    allowed_methods = ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS']
