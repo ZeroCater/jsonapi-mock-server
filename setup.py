@@ -4,7 +4,7 @@ install_requires = [
     'django >=1.7, <2',
     'django-cors-headers',
     'djangorestframework',
-    'fake-factory',
+    'faker',
     'inflection',
     'jsondiff',
     'requests',
