@@ -27,3 +27,4 @@ MIDDLEWARE_CLASSES = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 MS_DEFAULT_LIST_LENGTH = 10
+MS_PAGE_SIZE = 10
