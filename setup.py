@@ -15,13 +15,13 @@ install_requires = [
 setup(
     name='jsonapi-mock-server',
     description='JSON API mock server',
-    version='0.5',
+    version='0.6',
     author='ZeroCater',
     packages=find_packages(),
     install_requires=install_requires,
     licence='MIT',
-    url='https://github.com/ZeroCater/mp-mock-server',
-    keywords='jsonapi',
+    url='https://github.com/ZeroCater/jsonapi-mock-server',
+    keywords='jsonapi mock server',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
