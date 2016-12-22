@@ -5,6 +5,7 @@ import requests
 from simplejson.decoder import JSONDecodeError
 import unittest
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import Client
 from django.test.runner import DiscoverRunner
@@ -48,9 +49,9 @@ class TestFaker(MockServerBaseTestCase):
 
 class TestJsonResponses(MockServerBaseTestCase):
     maxDiff = None
-    master_origin = os.environ.get("MASTER_ORIGIN")
-    master_staff_email = os.environ.get("MASTER_STAFF_EMAIL")
-    master_staff_psswd = os.environ.get("MASTER_STAFF_PSSWD")
+    master_origin = settings.MASTER_ORIGIN
+    master_staff_email = settings.MASTER_STAFF_EMAIL
+    master_staff_psswd = settings.MASTER_STAFF_PASSWORD
 
     @classmethod
     def get_auth_token(cls):
@@ -99,19 +100,24 @@ class TestJsonResponses(MockServerBaseTestCase):
             self.fail("Unable to parse JSON response from master server response:\n{}, {}\n {}"
                       .format(master_url, master_response, master_response.text))
 
-        return master_json, mock_json
+        return master_url, master_json, path, mock_json
 
-    def assertJsonStructureEqual(self, master_json, mock_json):
+    def assertJsonStructureEqual(self, master_url, master_json, mock_url, mock_json):
         master_json_simple = simplify_json(master_json)
         mock_json_simple = simplify_json(mock_json)
         d = diff(master_json_simple, mock_json_simple)
-        error_msg = "\nmaster response:\n{}\n\nmock response:\n{}\n\ndiff:\n{}".format(
-            pprint.pformat(master_json_simple), pprint.pformat(mock_json_simple), pprint.pformat(d))
-        self.assertEqual(d, {}, error_msg)
+        error_msg = [
+            "master url:\n{}".format(master_url),
+            "master response:\n{}\n".format(pprint.pformat(master_json_simple)),
+            "mock url:\n{}".format(mock_url),
+            "mock response:\n{}\n".format(pprint.pformat(mock_json_simple)),
+            "diff:\n{}".format(pprint.pformat(d))
+        ]
+        self.assertEqual(d, {}, '\n'.join(error_msg))
 
     def do_test(self):
-        master_json, mock_json = self.get_responses(self.path)
-        self.assertJsonStructureEqual(master_json, mock_json)
+        master_url, master_json, mock_url, mock_json = self.get_responses(self.path)
+        self.assertJsonStructureEqual(master_url, master_json, mock_url, mock_json)
 
 
 class DatabaselessTestRunner(DiscoverRunner):
