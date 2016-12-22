@@ -3,7 +3,7 @@ import copy
 import inflection
 import os
 
-from jsonapi_mock_server import settings
+from django.conf import settings
 from utils import upper_camelize_resource
 
 

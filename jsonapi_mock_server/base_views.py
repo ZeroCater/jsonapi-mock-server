@@ -1,13 +1,13 @@
 import json
 import re
 
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import View
 from rest_framework import viewsets
 
 from hooks import MockServerHookParser
 from json_api_builder import JsonAPIErrorBuilder, JsonAPIResourceDetailBuilder, JsonAPIResourceListBuilder
-from jsonapi_mock_server import settings
 
 
 class MockServerBaseViewSet(viewsets.ViewSet):
