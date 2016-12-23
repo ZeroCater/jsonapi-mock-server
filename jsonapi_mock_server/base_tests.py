@@ -10,6 +10,9 @@ from django.core.urlresolvers import reverse
 from django.test import Client
 from django.test.runner import DiscoverRunner
 from jsondiff import diff
+import inflection
+
+from jsonapi_mock_server.base_views import ResourceDetailViewSet, ResourceListViewSet
 
 
 def simplify_json(obj):
@@ -39,19 +42,11 @@ class MockServerBaseTestCase(unittest.TestCase):
         return json.loads(response.content.decode())
 
 
-class TestFaker(MockServerBaseTestCase):
-    faker_qs = "?faker=1"
-
-    def do_test(self):
-        response = self.client.get(self.path + self.faker_qs)
-        self.assertEqual(response.status_code, 200)
-
-
 class TestJsonResponses(MockServerBaseTestCase):
     maxDiff = None
     master_origin = settings.MASTER_ORIGIN
     master_staff_email = settings.MASTER_STAFF_EMAIL
-    master_staff_psswd = settings.MASTER_STAFF_PASSWORD
+    master_staff_psswd = settings.MASTER_STAFF_PSSWD
 
     @classmethod
     def get_auth_token(cls):
@@ -83,41 +78,99 @@ class TestJsonResponses(MockServerBaseTestCase):
         except Exception, e:
             raise Exception("Unable to obtain auth token: {}".format(e))
 
-    def get_responses(self, path):
-        try:
-            mock_response = self.client.get(path)
-            mock_json = json.loads(mock_response.content.decode())
-        except JSONDecodeError, e:
-            self.fail("Unable to parse JSON response from mock server response:\n{}, {}\n {}"
-                      .format(mock_url, mock_response, mock_response.text))
-
-        try:
-            master_url = "{}{}".format(self.master_origin, path)
-            master_headers = {"Authorization": "Token %s" % self.master_token}
-            master_response = requests.get(master_url, headers=master_headers)
-            master_json = master_response.json()
-        except JSONDecodeError, e:
-            self.fail("Unable to parse JSON response from master server response:\n{}, {}\n {}"
-                      .format(master_url, master_response, master_response.text))
-
-        return master_url, master_json, path, mock_json
-
-    def assertJsonStructureEqual(self, master_url, master_json, mock_url, mock_json):
+    def assertJsonStructureEqual(self, master_json, mock_json):
         master_json_simple = simplify_json(master_json)
         mock_json_simple = simplify_json(mock_json)
         d = diff(master_json_simple, mock_json_simple)
         error_msg = [
-            "master url:\n{}".format(master_url),
+            "master url:\n{}".format(self.master_url),
             "master response:\n{}\n".format(pprint.pformat(master_json_simple)),
-            "mock url:\n{}".format(mock_url),
+            "mock url:\n{}".format(self.path),
             "mock response:\n{}\n".format(pprint.pformat(mock_json_simple)),
             "diff:\n{}".format(pprint.pformat(d))
         ]
         self.assertEqual(d, {}, '\n'.join(error_msg))
 
-    def do_test(self):
-        master_url, master_json, mock_url, mock_json = self.get_responses(self.path)
-        self.assertJsonStructureEqual(master_url, master_json, mock_url, mock_json)
+    def get_mock_response(self, url):
+        try:
+            mock_response = self.client.get(url)
+            mock_json = json.loads(mock_response.content.decode())
+        except JSONDecodeError, e:
+            self.fail("Unable to parse JSON response from mock server response:\n{}, {}\n {}"
+                      .format(url, mock_response, mock_response.text))
+        return mock_json
+
+    def get_master_response(self, url):
+        try:
+            master_headers = {"Authorization": "Token %s" % self.master_token}
+            master_response = requests.get(url, headers=master_headers)
+            master_json = master_response.json()
+        except JSONDecodeError, e:
+            self.fail("Unable to parse JSON response from master server response:\n{}, {}\n {}"
+                      .format(url, master_response, master_response.text))
+        return master_response, master_json
+
+    def get_master_resource_id(self):
+        master_list_url = "{}{}".format(self.master_origin, self.get_list_path())
+        master_headers = {"Authorization": "Token %s" % self.master_token}
+        master_response = requests.get(master_list_url, headers=master_headers)
+        master_json = master_response.json()
+        resource_id = master_json['data'][0]['id']
+        return resource_id
+
+    def get_detail_path(self, resource_id=1):
+        return reverse('{}-detail'.format(self.router_base_name), args=(resource_id,))
+
+    def get_list_path(self):
+        return reverse('{}-list'.format(self.router_base_name))
+
+    @property
+    def router_base_name(self):
+        return inflection.dasherize(inflection.underscore(self.viewset.resource_type)).lower()
+
+    def _test_view(self):
+        mock_json = self.get_mock_response(self.path)
+        self.master_url = "{}{}".format(self.master_origin, self.path)
+        master_response, master_json = self.get_master_response(self.master_url)
+        self.assertJsonStructureEqual(master_json, mock_json)
+
+    def test_detail_view(self, path=None):
+        if not issubclass(self.viewset, ResourceDetailViewSet):
+            self.skipTest("No detail view defined for for {}".format(self.viewset.resource_type))
+
+        self.path = path if path else self.get_detail_path()
+        self.master_url = "{}{}".format(self.master_origin, self.path)
+
+        mock_json = self.get_mock_response(self.path)
+        master_response, master_json = self.get_master_response(self.master_url)
+
+        if master_response.status_code == 404:
+            try:
+                master_resource_id = self.get_master_resource_id()
+                self.path = self.get_detail_path(resource_id=master_resource_id)
+                self.master_url = "{}{}".format(self.master_origin, self.path)
+                master_response, master_json = self.get_master_response(self.master_url)
+            except:
+                pass
+
+        self.assertJsonStructureEqual(master_json, mock_json)
+
+    def test_list_view(self, path=None):
+        if not issubclass(self.viewset, ResourceListViewSet):
+            self.skipTest("No list view defined for for {}".format(self.viewset.resource_type))
+
+        self.path = path if path else self.get_list_path()
+        self.master_url = "{}{}".format(self.master_origin, self.path)
+
+        mock_json = self.get_mock_response(self.path)
+        master_response, master_json = self.get_master_response(self.master_url)
+        self.assertJsonStructureEqual(master_json, mock_json)
+
+    def test_faker(self, path=None):
+        faker_qs = "?faker=1"
+        self.path = path if path else self.get_detail_path()
+        response = self.client.get("{}{}".format(self.path, faker_qs))
+        self.assertEqual(response.status_code, 200)
 
 
 class DatabaselessTestRunner(DiscoverRunner):
