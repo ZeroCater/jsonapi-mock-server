@@ -25,6 +25,7 @@ class BaseResource(object):
         type(None): "String",
         int: "Integer",
         bool: "Boolean",
+        list: "List",
     }
 
     relation_type_lookup = {
@@ -53,6 +54,12 @@ class BaseResource(object):
             field_info['required'] = False
             field_info['read_only'] = False
             field_info['label'] = self.get_field_label(fieldname)
+            field_info['choices'] = []
+
+            if field_info['type'] == 'List':
+                field_info['child'] = {
+                    'choices': [{ 'value': 'value', 'display_name': 'display_name' } for x in range(3)]
+                }
 
             field_metadata = self.attribute_metadata.get(fieldname, {})
             field_info.update(field_metadata)
