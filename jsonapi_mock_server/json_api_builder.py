@@ -156,7 +156,6 @@ class JsonAPIResourceDetailBuilder(JsonAPIBuilder):
 
         return relationships_object
 
-
 class JsonAPIResourceListBuilder(JsonAPIBuilder):
     def __init__(self, request, resource_type, page_size, length, config=None, curr_page=1):
         super(JsonAPIResourceListBuilder, self).__init__(request)
@@ -230,3 +229,10 @@ class JsonAPIResourceListBuilder(JsonAPIBuilder):
                 "pages": self.num_pages
             }
         }
+
+
+class JsonAPIIncludedResourceListBuilder(JsonAPIResourceListBuilder):
+    def __init__(self, request, resource_type, resource_ids, page_size, length, config=None, curr_page=1):
+        super(JsonAPIIncludedResourceListBuilder, self).__init__(
+            request, resource_type, page_size, length, config=config)
+        self.resource_ids = resource_ids
