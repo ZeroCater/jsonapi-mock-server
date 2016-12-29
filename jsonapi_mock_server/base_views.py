@@ -26,8 +26,14 @@ class MockServerBaseViewSet(viewsets.ViewSet):
         return include_ids
 
     def get_include_ids_from_response(self, response, include_type):
-        rel_data = response['data']['relationships'][include_type]['data']
-        include_ids = self._get_include_ids_from_rel_data(rel_data)
+        if isinstance(response['data'], list):
+            include_ids = []
+            for obj in response['data']:
+                rel_data = obj['relationships'][include_type]['data']
+                include_ids.extend(self._get_include_ids_from_rel_data(rel_data))
+        else:
+            rel_data = response['data']['relationships'][include_type]['data']
+            include_ids = self._get_include_ids_from_rel_data(rel_data)
         return set(include_ids)
 
     def get_include_ids_from_included(self, included, include_type):
