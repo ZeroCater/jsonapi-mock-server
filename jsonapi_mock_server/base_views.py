@@ -4,28 +4,69 @@ import re
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import View
+from inflection import camelize, pluralize, singularize
 from rest_framework import viewsets
 
 from hooks import MockServerHookParser
-from json_api_builder import JsonAPIErrorBuilder, JsonAPIResourceDetailBuilder, JsonAPIResourceListBuilder
+from json_api_builder import (
+    JsonAPIErrorBuilder, JsonAPIResourceDetailBuilder, JsonAPIResourceListBuilder,
+    JsonAPIIncludedResourceListBuilder
+)
 
 
 class MockServerBaseViewSet(viewsets.ViewSet):
     def request_contains_include(self, request):
         return 'include' in request.GET.keys()
 
-    def add_include_object(self, request, response, length=10, overrides=None):
-        include_resource_types = re.split(r'[,\.]', request.GET.get('include'))
+    def _get_include_ids_from_rel_data(self, rel_data):
+        if isinstance(rel_data, list):
+            include_ids = [rd['id'] for rd in rel_data]
+        else:
+            include_ids = [rel_data['id']]
+        return include_ids
 
-        for include_resource_type in include_resource_types:
-            json_api_builder = JsonAPIResourceListBuilder(request,
-                                                          include_resource_type,
-                                                          self.page_size,
-                                                          length,
-                                                          config=overrides)
-            include_objects = json_api_builder.build_include_list()
-            if include_objects:
-                response.setdefault("included", []).extend(include_objects)
+    def get_include_ids_from_response(self, response, include_type):
+        rel_data = response['data']['relationships'][include_type]['data']
+        include_ids = self._get_include_ids_from_rel_data(rel_data)
+        return set(include_ids)
+
+    def get_include_ids_from_included(self, included, include_type):
+        include_ids = []
+        include_types = [include_type, singularize(include_type)]
+        for include_object in included:
+            for include_type in include_types:
+                try:
+                    rel_data = include_object['relationships'][include_type]['data']
+                except:
+                    pass
+                else:
+                    include_ids.extend(self._get_include_ids_from_rel_data(rel_data))
+                    break
+
+        return set(include_ids)
+
+    def add_include_objects(self, request, response, length=10, overrides=None):
+        include_groups = [group.split('.') for group in request.GET.get('include').split(',')]
+
+        for include_group in include_groups:
+            for x, include_type in enumerate(include_group):
+                resource_type = pluralize(camelize(include_type, uppercase_first_letter=False))
+
+                if x == 0:
+                    include_ids = self.get_include_ids_from_response(response, resource_type)
+                else:
+                    include_ids = self.get_include_ids_from_included(response['included'], resource_type)
+
+
+                json_api_builder = JsonAPIIncludedResourceListBuilder(request,
+                                                                      include_type,
+                                                                      include_ids,
+                                                                      self.page_size,
+                                                                      length,
+                                                                      config=overrides)
+                include_objects = json_api_builder.build_include_list()
+                if include_objects:
+                    response.setdefault("included", []).extend(include_objects)
 
         return response
 
@@ -48,7 +89,7 @@ class ResourceDetailViewSet(MockServerBaseViewSet):
         response = json_api_builder.build_resource_detail_object()
 
         if self.request_contains_include(request):
-            response = self.add_include_object(request, response, overrides=overrides)
+            response = self.add_include_objects(request, response, overrides=overrides)
 
         return JsonResponse(response, status=200, content_type="application/vnd.api+json")
 
@@ -116,7 +157,7 @@ class ResourceListViewSet(MockServerBaseViewSet):
         response = json_api_builder.build_resource_list_object()
 
         if self.request_contains_include(request):
-            response = self.add_include_object(request, response, overrides=overrides)
+            response = self.add_include_objects(request, response, overrides=overrides)
 
         return JsonResponse(response, status=200, content_type="application/vnd.api+json")
 

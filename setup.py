@@ -15,7 +15,7 @@ install_requires = [
 setup(
     name='jsonapi-mock-server',
     description='JSON API mock server',
-    version='0.9',
+    version='0.10',
     author='ZeroCater',
     packages=find_packages(),
     install_requires=install_requires,
