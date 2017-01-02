@@ -34,20 +34,19 @@ class MockServerBaseViewSet(viewsets.ViewSet):
         else:
             rel_data = response['data']['relationships'][include_type]['data']
             include_ids = self._get_include_ids_from_rel_data(rel_data)
+
         return set(include_ids)
 
     def get_include_ids_from_included(self, included, include_type):
         include_ids = []
-        include_types = [include_type, singularize(include_type)]
         for include_object in included:
-            for include_type in include_types:
-                try:
-                    rel_data = include_object['relationships'][include_type]['data']
-                except:
-                    pass
-                else:
-                    include_ids.extend(self._get_include_ids_from_rel_data(rel_data))
-                    break
+            try:
+                rel_data = include_object['relationships'][include_type]['data']
+            except:
+                pass
+            else:
+                include_ids.extend(self._get_include_ids_from_rel_data(rel_data))
+                break
 
         return set(include_ids)
 
@@ -56,7 +55,7 @@ class MockServerBaseViewSet(viewsets.ViewSet):
 
         for include_group in include_groups:
             for x, include_type in enumerate(include_group):
-                resource_type = pluralize(camelize(include_type, uppercase_first_letter=False))
+                resource_type = camelize(include_type, uppercase_first_letter=False)
 
                 if x == 0:
                     include_ids = self.get_include_ids_from_response(response, resource_type)
