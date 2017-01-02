@@ -18,7 +18,7 @@ class BaseResource(object):
     # a particular JsonAPI resource object.
     json_api_rules = []
     relationships = []
-    page_size = settings.MS_PAGE_SIZE
+    page_size = settings.MS_PAGE_SIZE if hasattr(settings, 'MS_PAGE_SIZE') else 10
 
     type_lookup = {
         str: "String",
