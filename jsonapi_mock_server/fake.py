@@ -2,8 +2,6 @@ import random
 
 from faker import Faker
 
-from fake_provider import CatererProvider
-
 
 class BaseFaker(object):
     def __init__(self):
@@ -49,7 +47,6 @@ class BooleanFaker(BaseFaker):
 
 class StringFaker(BaseFaker):
     fake = Faker()
-    fake.add_provider(CatererProvider)
 
     def __init__(self, faker_provider):
         super(StringFaker, self).__init__()
