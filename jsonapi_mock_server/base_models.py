@@ -30,8 +30,8 @@ class BaseResource(object):
 
     relation_type_lookup = {
         tuple: "ManyToMany",
-        int: "OneToMany",
-        str: "OneToMany",
+        int: "ManyToOne",
+        str: "ManyToOne",
     }
 
     def get_attributes(self):
