@@ -44,37 +44,15 @@ class MockServerBaseTestCase(unittest.TestCase):
 
 class TestJsonResponses(MockServerBaseTestCase):
     maxDiff = None
+    auth_token = settings.AUTH_TOKEN
     master_origin = settings.MASTER_ORIGIN
-    master_staff_email = settings.MASTER_STAFF_EMAIL
-    master_staff_psswd = settings.MASTER_STAFF_PSSWD
-
-    @classmethod
-    def get_auth_token(cls):
-        login_post_data = {
-            "data": {
-                "type": "Login",
-                "attributes": {
-                    "email": cls.master_staff_email,
-                    "password": cls.master_staff_psswd
-                }
-            }
-        }
-
-        headers = {"Content-Type": "application/json"}
-        master_url = "{}/login".format(cls.master_origin)
-        master_response = requests.post(master_url, data=json.dumps(login_post_data), headers=headers)
-        if master_response.status_code != requests.codes.ok:
-            raise Exception("Login to {} returned {} using data:\n{}".format(
-                master_url, master_response.status_code, login_post_data))
-        master_json = master_response.json()
-        return master_json['data']['token']
 
     @classmethod
     def setUpClass(cls):
         super(TestJsonResponses, cls).setUpClass()
 
         try:
-            cls.master_token = cls.get_auth_token()
+            cls.master_token = cls.auth_token
         except Exception, e:
             raise Exception("Unable to obtain auth token: {}".format(e))
 
