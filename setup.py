@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'django >=1.7, <2',
+    'django >=1.7, <3',
     'django-cors-headers',
     'djangorestframework',
     'faker',
